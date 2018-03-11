@@ -1,0 +1,13 @@
+{
+  "name": "express-passport-ldap-mongoose",
+  "version": "1.0.0",
+  "description": "A library to use passport-ldapauth and local MongoDB to authenticate and save users",
+  "main": "index.js",
+  "repository": "https://github.com/shaozi/express-passport-ldap-mongoose.git",
+  "author": "Jingshao Chen <jingshaochen@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "passport": "^0.4.0",
+    "passport-ldapauth": "^2.0.0"
+  }
+}
