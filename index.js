@@ -59,7 +59,15 @@ var init = function (dn, ldapurl, router, findFunc, insertFunc, loginUrl, logout
     done(null, user.uid)
   })
   
-  passport.deserializeUser(_findFunc)
+  passport.deserializeUser((id, done) => {
+    _findFunc(id).then(user => {
+      if (!user) {
+        done(new Error(`Deserialize user failed. ${id} is deleted from local DB`))
+      } else {
+        done(null, user)
+      }
+    })
+  })
 
   router.use(passport.initialize())
   router.use(passport.session())
@@ -104,7 +112,9 @@ var login = function (req, res, next) {
         if (loginErr) {
           return next(loginErr);
         }
-        _insertFunc(user, res)
+        _insertFunc(user).then(user => {
+          return res.json({ success: true, message: 'authentication succeeded', user: user.toObject() })
+        })
       })
     }
   })(req, res, next)
