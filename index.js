@@ -12,16 +12,17 @@ var _insertFunc
 var _loginUrl
 var _logoutUrl
 var _router
+
 /**
  * Set up ldap server information, callbacks, and express route.
  * 
  * @param {string} dn - ldap dn
  * @param {string} ldapurl - ldap server url
  * @param {object} router - express router
- * @param {function} findFunc - function(id, done) to find the user in local db by id
- * @param {function} insertFunc - function(user, res) to upsert user into local db
- * @param {string} loginUrl - path to login page. Default: /login
- * @param {string} logoutUrl - path to logout page. Default: /logout
+ * @param {function} findFunc - function(id) to find the user in local db by id
+ * @param {function} insertFunc - function(user) to upsert user into local db
+ * @param {string} [loginUrl] - path to login page. Default: /login
+ * @param {string} [logoutUrl] - path to logout page. Default: /logout
  */
 var init = function (dn, ldapurl, router, findFunc, insertFunc, loginUrl, logoutUrl) {
   _dn = dn
