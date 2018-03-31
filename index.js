@@ -107,7 +107,7 @@ var login = function (req, res, next) {
       return next(err)
     }
     if (!user) {
-      res.status(401).json({ success: false, message: 'authentication failed' })
+      res.status(401).json({ success: false, message: info.message })
     } else {
       req.login(user, loginErr => {
         if (loginErr) {
