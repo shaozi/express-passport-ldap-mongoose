@@ -1,4 +1,8 @@
 # express-passport-ldap-mongoose
+
+[![Build Status](https://travis-ci.org/shaozi/express-passport-ldap-mongoose.svg?branch=master)](https://travis-ci.org/shaozi/express-passport-ldap-mongoose)
+
+
 A library to use passport-ldapauth and local MongoDB to authenticate and save users
 
 When an application needs to authenticate a user against an LDAP server, it normally also needs to
