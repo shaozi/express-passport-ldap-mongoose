@@ -9,5 +9,16 @@
   "dependencies": {
     "passport": "^0.4.0",
     "passport-ldapauth": "^2.0.0"
+  },
+  "devDependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.3",
+    "express-session": "^1.15.6",
+    "jest": "^22.4.3",
+    "superagent": "^3.8.2",
+    "supertest": "^3.0.0"
+  },
+  "scripts": {
+    "test": "jest test/test.js"
   }
 }

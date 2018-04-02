@@ -114,7 +114,8 @@ var login = function (req, res, next) {
           return next(loginErr);
         }
         _insertFunc(user).then(user => {
-          return res.json({ success: true, message: 'authentication succeeded', user: user.toObject() })
+          var userObj = typeof(user.toObject) === "function" ? user.toObject(): user 
+          return res.json({ success: true, message: 'authentication succeeded', user: userObj })
         })
       })
     }
