@@ -3,19 +3,22 @@
 [![Build Status](https://travis-ci.org/shaozi/express-passport-ldap-mongoose.svg?branch=master)](https://travis-ci.org/shaozi/express-passport-ldap-mongoose)
 [![Known Vulnerabilities](https://snyk.io/test/github/shaozi/express-passport-ldap-mongoose/badge.svg?targetFile=package.json)](https://snyk.io/test/github/shaozi/express-passport-ldap-mongoose?targetFile=package.json)
 
-A library to use passport-ldapauth and local MongoDB to authenticate and save users
+A turn key library that uses [ldap-authentication](https://github.com/shaozi/ldap-authentication)
+with Passport and local database (MongoDB) to authenticate and save users
 
 When an application needs to authenticate a user against an LDAP server, it normally also needs to
 save the user into local MongoDB for further references. `express-passport-ldap-mongoose` is designed
-to handle this requirement with a simple wrapper layer on top of expressjs, passportjs, passport-ldapauth,
+to handle this requirement with a simple wrapper layer on top of expressjs, passportjs,
+[ldap-authentication](https://github.com/shaozi/ldap-authentication),
 and MongoDB.
 
-## Requirement
+## Requirements
 
 * node Express
-* Mongoose
+* Mongoose (optional)
 * Passport
-* Passport-ldapauth
+* [ldap-authentication](https://github.com/shaozi/ldap-authentication)
+* The login submit field names should be `username` for username, and `password` for password
 
 ## Installation
 
@@ -24,6 +27,7 @@ Using npm: `npm install --save express-passport-ldap-mongoose`
 or using yarn: `yarn add express-passport-ldap-mongoose`
 
 ## Usage
+
 `express-passport-ldap-mongoose` configures passportjs and adds the login and logout route to
 your express app or router. All you need to do is call the `init` function of the library
 and everything else is taken care of.
@@ -32,31 +36,68 @@ and everything else is taken care of.
 const LdapAuth = require('express-passport-ldap-mongoose')
 app.use(bodyParser.json())
 app.use(sessionMiddleWare)
-LdapAuth.init(dn, ldapurl, app, findUserFunc, upsertUserFunc, loginPath, logoutPath)
+LdapAuth.init(options, '', app, findUserFunc, upsertUserFunc, loginPath, logoutPath)
 ```
+
 ## MongoDB model
-The `User` model in local MongoDB must have the `uid` key that maps to LDAP `uid` property. This
-`uid` field is used to uniquely identify a user and is normally the user's login name.
+
+When search for a user by its username in LDAP, a `usernameAttribute` is needed.
+The `User` model in local MongoDB must have the same key as the value of `usernameAttribute`
+that maps to the LDAP attribute. In some cases, and in the example we are using `uid`.
+it is used to uniquely identify a user and equals to the user's login username.
 
 ## Parameters
 
-* `dn`: The bind DN of LDAP server. Example: `dc=example.com,dc=com`
-* `ldapurl`: URL of LDAP server. Example: `ldaps://ldap.example.com`, `ldap://ldap.example.com`
+* `options`: If the first parameter is an object,
+             it is the options object to pass to `ldap-authentication`'s `authenticate()` function.
+             If is a string (deprecated), is the ldap search base (for backward compatible)
+             If options is an object, literal `{{username}}` in the `userDn` will be replaced with the value in
+             `req.body.username` which will be the user input username.
+             See [ldap-authentication](https://github.com/shaozi/ldap-authentication) for detail explanation on each options.
+
+   String Example (deprecated): `dc=example.com,dc=com`
+
+   Options object Example:
+
+   ```javascript
+   let options = {
+        ldapOpts: {
+          url: 'ldap://localhost'
+        },
+        // note in this example it only use the user to directly
+        // bind to the LDAP server. You can also use an admin
+        // here. See the document of ldap-authentication.
+        userDn: `uid=${req.body.username},${ldapBaseDn}`,
+        userPassword: req.body.password,
+        userSearchBase: ldapBaseDn,
+        usernameAttribute: 'uid',
+        username: req.body.username
+      }
+   ```
+
+* `ldapurl` (deprecated): URL of LDAP server. Example: `ldaps://ldap.example.com`, `ldap://ldap.example.com`
+  
+   It will be ignored if the first parameter of the function is an object
 * `app`: Express app or router
-* `findUserFunc`: `function(id)`. A function takes a string id and return a promise that resolves to a user or null. 
+* `findUserFunc`: `function(id)`. A function takes a string id and return a promise that resolves to a user or null.
   This function is called everytime passport do deserialization. It is normally a `FindOne` or `FindById` call against
-  local mongo database. Example: `(id) => {return User.findOne({ uid: id }).exec()}`
+  local mongo database. Example: `(id) => {return User.findOne({ uid: id }).exec()}`. However, it does not have to be
+  any database related. It is just a functin that can return a user from a user id.
 * `upsertUserFunc`: `function(user)`. A function take a user object (obtained from ldap server and saved in express `req`)
-  and upsert into local database; returns a promise that resolves to a local db user object.
+  and upsert into local database; returns a promise that resolves to a local db user object. Again, it does not have to
+  be any database related. It is essentially a function that update some internal record of a user.
   Example: `(user) => {return User.findOneAndUpdate({ uid: user.uid }, user, { upsert: true, new: true }).exec()}`
 * `loginPath`: (optional, default `/login`) The login path for express to parse the login posted json data. The posted data
-  must be in json format, and with `username` and `password` as the key names. An `app.post(loginPath, loginHandler)` 
+  must be in json format, and with `username` and `password` as the key names. An `app.post(loginPath, loginHandler)`
   will be automatically added and handled by the library.
-* `logoutPath`: (optional, default `/logout`) The logout path for express to parse the logout request. An `app.get(logoutPath, logoutHandler)` 
+* `logoutPath`: (optional, default `/logout`) The logout path for express to parse the logout request. An `app.get(logoutPath, logoutHandler)`
   will be automatically added and handled by the library.
 
 ## Example
-Complete example is at https://github.com/shaozi/express-passport-ldap-mongoose-example
+
+Complete example is in the example folder.
+
+Another example on how to use Passport and [ldap-authentication](https://github.com/shaozi/ldap-authentication) can be found in [passport-ldap-example](https://github.com/shaozi/passport-ldap-example).
 
 ```javascript
 const mongoose = require('mongoose')
@@ -90,10 +131,21 @@ var sessionMiddleWare = session({
 app.use(bodyParser.json())
 app.use(sessionMiddleWare)
 // use the library express-passport-ldap-mongoose
-LdapAuth.init(CONFIG.ldap.dn, CONFIG.ldap.url, app, (id) => {
-  return User.findOne({ uid: id }).exec()
+let usernameAttributeName = 'uid'
+LdapAuth.init({
+  ldapOpts: {
+    url: 'ldap://localhost'
+  },
+  // note in this example it only use the user to directly
+  // bind to the LDAP server. You can also use an admin
+  // here. See the document of ldap-authentication.
+  userDn: `uid={{username}},${ldapBaseDn}`,
+  userSearchBase: ldapBaseDn,
+  usernameAttribute: usernameAttributeName
+}, '', app, (id) => {
+  return User.findOne({ usernameAttributeName: id }).exec()
 }, (user) => {
-  return User.findOneAndUpdate({ uid: user.uid }, user, { upsert: true, new: true }).exec()
+  return User.findOneAndUpdate({ username: user[usernameAttributeName] }, user, { upsert: true, new: true }).exec()
 })
 
 // serve static pages (where login.html resides)

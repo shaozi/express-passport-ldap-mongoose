@@ -44,7 +44,16 @@ function upsertUser(user) {
     })
 }
 
-auth.init('dc=example,dc=com', 'ldap://ldap.forumsys.com', app,
+let userOptions = {
+    ldapOpts: {
+        url: 'ldap://ldap.forumsys.com'
+    },
+    userDn: `uid={{username}},dc=example,dc=com`,
+    userSearchBase: 'dc=example,dc=com',
+    usernameAttribute: 'uid'
+}
+
+auth.init(userOptions, '', app,
     findUserById, upsertUser
 )
 
@@ -57,6 +66,8 @@ describe('Test ldap authenticate', () => {
     test('It should response the POST method', () => {
         return request(app).post("/login").then(response => {
             expect(response.statusCode).toBe(401)
+            expect(response.body.success).toBeFalsy()
+            expect(response.body.message).toEqual("username and password must be both provided")
         })
     })
     test('invalid username/password result', () => {
@@ -66,9 +77,9 @@ describe('Test ldap authenticate', () => {
             .then(response => {
                 expect(response.statusCode).toBe(401)
                 expect(response.body.success).toBeFalsy()
-                expect(response.body.message).toEqual("Invalid username/password")
+                expect(response.body.message).toEqual("Invalid Credentials")
                 expect(response.body.user).toBeUndefined()
-                user = User.find(u => { return u.uid === "gauss" })
+                user = User.find(u => { return u.username === "gauss" })
                 expect(user).toBeUndefined()
             })
     })
