@@ -37,9 +37,50 @@ var sessionMiddleWare = session({
 app.use(bodyParser.json())
 app.use(sessionMiddleWare)
 // use the library express-passport-ldap-mongoose
-LdapAuth.init(CONFIG.ldap.dn, CONFIG.ldap.url, app, 
+// backward compatible mode
+/*LdapAuth.init(CONFIG.ldap.dn, CONFIG.ldap.url, app, 
   (id) => User.findOne({ uid: id }).exec(), 
   (user) => User.findOneAndUpdate({ uid: user.uid }, user, { upsert: true, new: true }).exec()
+)*/
+
+// new mode, simple user
+let usernameAttr = 'uid'
+let searchBase = CONFIG.ldap.dn
+let options = {
+  ldapOpts: {
+    url: CONFIG.ldap.url
+  },
+  userDn: `uid={{username}},${CONFIG.ldap.dn}`,
+  userSearchBase: searchBase,
+  usernameAttribute: usernameAttr
+}
+let admOptions = {
+  ldapOpts: {
+    url: CONFIG.ldap.url,
+    //tlsOptions: { rejectUnauthorized: false }
+  },
+  adminDn: `cn=read-only-admin,dc=example,dc=com`,
+  adminPassword: 'password',
+  userSearchBase: searchBase,
+  usernameAttribute: usernameAttr
+  //starttls: true
+}
+let userOptions = {
+  ldapOpts: {
+    url: CONFIG.ldap.url,
+    //tlsOptions: { rejectUnauthorized: false }
+  },
+  userDn: `uid={{username}},dc=example,dc=com`,
+  userSearchBase: searchBase,
+  usernameAttribute: usernameAttr
+  //starttls: true
+}
+LdapAuth.init(userOptions, '', app, 
+  (id) => User.findOne({ username: id }).exec(), 
+  (user) => {
+    console.log(`${user[usernameAttr]} has logged in`)
+    return User.findOneAndUpdate({ username: user[usernameAttr] }, user, { upsert: true, new: true }).exec()
+  }
 )
 
 // serve static pages
@@ -47,4 +88,6 @@ app.use(express.static('public'))
 
 
 // Start server
-app.listen(4000, '127.0.0.1')
+let port=4000
+console.log(`server listen on port ${port}`)
+app.listen(port, '127.0.0.1')
