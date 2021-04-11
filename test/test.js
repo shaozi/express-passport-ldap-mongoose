@@ -45,7 +45,7 @@ let userOptions = {
   usernameAttribute: 'uid',
 }
 
-auth.init(userOptions, '', app, findUserById, upsertUser)
+auth.initialize(userOptions, app, findUserById, upsertUser)
 
 describe('Test ldap authenticate', () => {
   it('It should response the GET method', async () => {

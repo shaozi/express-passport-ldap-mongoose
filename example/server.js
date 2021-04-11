@@ -74,9 +74,8 @@ let userOptions = {
   usernameAttribute: usernameAttr,
   //starttls: true
 }
-LdapAuth.init(
+LdapAuth.initialize(
   userOptions,
-  '',
   app,
   (id) => User.findOne({ username: id }).exec(),
   (user) => {

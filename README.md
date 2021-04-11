@@ -29,15 +29,20 @@ or using yarn: `yarn add express-passport-ldap-mongoose`
 ## Usage
 
 `express-passport-ldap-mongoose` configures passportjs and adds the login and logout route to
-your express app or router. All you need to do is call the `init` function of the library
+your express app or router. All you need to do is call the `initialize` function of the library
 and everything else is taken care of.
+
 
 ```javascript
 const LdapAuth = require('express-passport-ldap-mongoose')
-app.use(bodyParser.json())
+app.use(express.json())
 app.use(sessionMiddleWare)
-LdapAuth.init(options, '', app, findUserFunc, upsertUserFunc, loginPath, logoutPath)
+LdapAuth.initialize(options, app, findUserFunc, upsertUserFunc, loginPath, logoutPath)
 ```
+
+
+> Since version 3.1.0, you can still use `init()` but it is deprecated. 
+Use `initialize()` instead which is simpler.
 
 ## MongoDB model
 
@@ -75,9 +80,6 @@ it is used to uniquely identify a user and equals to the user's login username.
       }
    ```
 
-* `ldapurl` (deprecated): URL of LDAP server. Example: `ldaps://ldap.example.com`, `ldap://ldap.example.com`
-  
-   It will be ignored if the first parameter of the function is an object
 * `app`: Express app or router
 * `findUserFunc`: `function(id)`. A function takes a string id and return a promise that resolves to a user or null.
   This function is called everytime passport do deserialization. It is normally a `FindOne` or `FindById` call against
@@ -131,21 +133,23 @@ app.use(express.json())
 app.use(sessionMiddleWare)
 // use the library express-passport-ldap-mongoose
 let usernameAttributeName = 'uid'
-LdapAuth.init({
-  ldapOpts: {
-    url: 'ldap://localhost'
-  },
-  // note in this example it only use the user to directly
-  // bind to the LDAP server. You can also use an admin
-  // here. See the document of ldap-authentication.
-  userDn: `uid={{username}},${ldapBaseDn}`,
-  userSearchBase: ldapBaseDn,
-  usernameAttribute: usernameAttributeName
-}, '', app, (id) => {
-  return User.findOne({ usernameAttributeName: id }).exec()
-}, (user) => {
-  return User.findOneAndUpdate({ username: user[usernameAttributeName] }, user, { upsert: true, new: true }).exec()
-})
+LdapAuth.initialize({
+    ldapOpts: {
+      url: 'ldap://localhost'
+    },
+    // note in this example it only use the user to directly
+    // bind to the LDAP server. You can also use an admin
+    // here. See the document of ldap-authentication.
+    userDn: `uid={{username}},${ldapBaseDn}`,
+    userSearchBase: ldapBaseDn,
+    usernameAttribute: usernameAttributeName
+  }, 
+  app, 
+  (id) => {
+    return User.findOne({ usernameAttributeName: id }).exec()
+  }, (user) => {
+    return User.findOneAndUpdate({ username: user[usernameAttributeName] }, user, { upsert: true, new: true }).exec()
+  })
 
 // serve static pages (where login.html resides)
 app.use(express.static('public'))
