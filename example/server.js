@@ -7,7 +7,7 @@ mongoose.Promise = Promise
 mongoose.connect(CONFIG.dburl, {
   useUnifiedTopology: true,
   useNewUrlParser: true,
-  useFindAndModify: false
+  useFindAndModify: false,
 })
 const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
@@ -15,7 +15,6 @@ const MongoStore = require('connect-mongo')(session)
 const express = require('express')
 const app = express()
 
-const bodyParser = require('body-parser')
 const User = require('./model').User
 
 const LdapAuth = require('../index')
@@ -30,11 +29,11 @@ var sessionMiddleWare = session({
     httpOnly: false,
     maxAge: 1000 * 3600 * 24,
     secure: false, // this need to be false if https is not used. Otherwise, cookie will not be sent.
-  }
+  },
 })
 
 // The order of the following middleware is very important!!
-app.use(bodyParser.json())
+app.use(express.json())
 app.use(sessionMiddleWare)
 // use the library express-passport-ldap-mongoose
 // backward compatible mode
@@ -48,11 +47,11 @@ let usernameAttr = 'uid'
 let searchBase = CONFIG.ldap.dn
 let options = {
   ldapOpts: {
-    url: CONFIG.ldap.url
+    url: CONFIG.ldap.url,
   },
   userDn: `uid={{username}},${CONFIG.ldap.dn}`,
   userSearchBase: searchBase,
-  usernameAttribute: usernameAttr
+  usernameAttribute: usernameAttr,
 }
 let admOptions = {
   ldapOpts: {
@@ -62,7 +61,7 @@ let admOptions = {
   adminDn: `cn=read-only-admin,dc=example,dc=com`,
   adminPassword: 'password',
   userSearchBase: searchBase,
-  usernameAttribute: usernameAttr
+  usernameAttribute: usernameAttr,
   //starttls: true
 }
 let userOptions = {
@@ -72,22 +71,26 @@ let userOptions = {
   },
   userDn: `uid={{username}},dc=example,dc=com`,
   userSearchBase: searchBase,
-  usernameAttribute: usernameAttr
+  usernameAttribute: usernameAttr,
   //starttls: true
 }
-LdapAuth.init(userOptions, '', app, 
-  (id) => User.findOne({ username: id }).exec(), 
+LdapAuth.initialize(
+  userOptions,
+  app,
+  (id) => User.findOne({ username: id }).exec(),
   (user) => {
     console.log(`${user[usernameAttr]} has logged in`)
-    return User.findOneAndUpdate({ username: user[usernameAttr] }, user, { upsert: true, new: true }).exec()
+    return User.findOneAndUpdate({ username: user[usernameAttr] }, user, {
+      upsert: true,
+      new: true,
+    }).exec()
   }
 )
 
 // serve static pages
 app.use(express.static('public'))
 
-
 // Start server
-let port=4000
+let port = 4000
 console.log(`server listen on port ${port}`)
 app.listen(port, '127.0.0.1')
