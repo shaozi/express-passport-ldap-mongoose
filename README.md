@@ -109,7 +109,6 @@ const MongoStore = require('connect-mongo')(session)
 const express = require('express')
 const app = express()
 
-const bodyParser = require('body-parser')
 const User = require('./model').User
 
 const LdapAuth = require('express-passport-ldap-mongoose')
@@ -128,7 +127,7 @@ var sessionMiddleWare = session({
 })
 
 // The order of the following middleware is very important!!
-app.use(bodyParser.json())
+app.use(express.json())
 app.use(sessionMiddleWare)
 // use the library express-passport-ldap-mongoose
 let usernameAttributeName = 'uid'
