@@ -4,13 +4,15 @@
 const CONFIG = require('./config.js')
 const mongoose = require('mongoose')
 mongoose.Promise = Promise
-mongoose.connect(CONFIG.dburl, {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-  useFindAndModify: false,
-})
+const mongoClientPromise = mongoose
+  .connect(CONFIG.mongodb.url, {
+    user: CONFIG.mongodb.user,
+    pass: CONFIG.mongodb.pass,
+    authSource: 'admin',
+  })
+  .then((m) => m.connection.getClient())
 const session = require('express-session')
-const MongoStore = require('connect-mongo')(session)
+const MongoStore = require('connect-mongo')
 
 const express = require('express')
 const app = express()
@@ -21,7 +23,9 @@ const LdapAuth = require('../index')
 
 var sessionMiddleWare = session({
   secret: CONFIG.sessionSecret,
-  store: new MongoStore({ mongooseConnection: mongoose.connection }),
+  store: MongoStore.create({
+    clientPromise: mongoClientPromise,
+  }),
   resave: true,
   saveUninitialized: true,
   unset: 'destroy',
@@ -78,12 +82,18 @@ LdapAuth.initialize(
   userOptions,
   app,
   (id) => User.findOne({ username: id }).exec(),
-  (user) => {
+  async (user) => {
     console.log(`${user[usernameAttr]} has logged in`)
-    return User.findOneAndUpdate({ username: user[usernameAttr] }, user, {
-      upsert: true,
-      new: true,
-    }).exec()
+    let foundUser = await User.findOneAndUpdate(
+      { username: user[usernameAttr] },
+      user,
+      {
+        upsert: true,
+        new: true,
+      }
+    ).exec()
+    console.log(`${foundUser.username} is retrieved from database`)
+    return foundUser
   }
 )
 

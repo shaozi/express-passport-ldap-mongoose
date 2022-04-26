@@ -45,7 +45,6 @@ var init = function (
     _dn = opt
     _backwardCompatible = true
   }
-  _router = router
   _findFunc = findFunc
   _insertFunc = insertFunc
   _loginUrl = loginUrl || '/login'
