@@ -145,10 +145,13 @@ LdapAuth.initialize({
     usernameAttribute: usernameAttributeName
   }, 
   app, 
-  (id) => {
-    return User.findOne({ usernameAttributeName: id }).exec()
-  }, (user) => {
-    return User.findOneAndUpdate({ username: user[usernameAttributeName] }, user, { upsert: true, new: true }).exec()
+  async (id) => {
+    let user = await User.findOne({ usernameAttributeName: id }).exec()
+    return user
+  }, 
+  async (user) => {
+    let foundUser = await User.findOneAndUpdate({ username: user[usernameAttributeName] }, user, { upsert: true, new: true }).exec()
+    return foundUser
   })
 
 // serve static pages (where login.html resides)
